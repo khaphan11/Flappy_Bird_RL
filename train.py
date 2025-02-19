@@ -19,7 +19,6 @@ for episode in range(num_episodes):
     while True:
         next_state, reward, done = env.step(action)
         next_state = tuple(np.round(next_state, 5))[0]
-        # print(next_state)
         next_action = agent.choose_action(next_state)
         agent.update_q_value(state, action, reward, next_state, next_action, done)
         total_reward += reward
@@ -30,8 +29,6 @@ for episode in range(num_episodes):
             # agent.decay_epsilon()
             print(f"Episode {episode}, Score: {env.score}, Epsilon: {agent.epsilon}, Total reward: {total_reward}")
             break
-
-    # print(total_reward, env.score)
 
 
 pygame.quit()
