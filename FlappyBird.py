@@ -11,7 +11,7 @@ pygame.display.set_caption("Flappy Bird - RL (SARSA)")
 background = pygame.image.load("bg.png")
 background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 
-bird_img = pygame.image.load("bird1.png")
+bird_img = pygame.image.load("bird.png")
 bird_img = pygame.transform.scale(bird_img, (40, 30))
 
 pipe_img = pygame.image.load("pipe.png")
