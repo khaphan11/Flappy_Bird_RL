@@ -1,10 +1,13 @@
 import pygame
+from pygame.locals import *
 import random
-import numpy as np
 
 pygame.init()
+pygame.font.init()
 
-WIDTH, HEIGHT = 400, 600
+Font = pygame.font.SysFont("comicsans", 30)
+
+WIDTH, HEIGHT = 280, 511
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Flappy Bird - RL (SARSA)")
 
@@ -22,15 +25,23 @@ ground_img = pygame.transform.scale(ground_img, (WIDTH, 50))
 
 BIRD_X = 50
 GRAVITY = 0.9
-FLAP_STRENGTH = -2
+FLAP_STRENGTH = -6
 
 PIPE_WIDTH = 50
 PIPE_GAP = 150
 PIPE_VELOCITY = 3
 
+clock = pygame.time.Clock()
+
+class Pipe(pygame.Rect):
+    def __init__(self, left, top, width, height):
+        super().__init__(left, top, width, height)
+        self.passed = False
+
 class FlappyBirdEnv:
-    def __init__(self):
+    def __init__(self, delay=0):
         self.reset()
+        self.delay = delay
 
     def reset(self):
         self.bird_y = HEIGHT // 2
@@ -41,54 +52,52 @@ class FlappyBirdEnv:
 
     def create_pipe(self):
         pipe_height = random.randint(100, 300)
-        top_pipe = pygame.Rect(WIDTH, 0, PIPE_WIDTH, pipe_height)
-        bottom_pipe = pygame.Rect(WIDTH, pipe_height + PIPE_GAP, PIPE_WIDTH, HEIGHT - pipe_height - PIPE_GAP)
+        top_pipe = Pipe(WIDTH, 0, PIPE_WIDTH, pipe_height)
+        bottom_pipe = Pipe(WIDTH, pipe_height + PIPE_GAP, PIPE_WIDTH, HEIGHT - pipe_height - PIPE_GAP)
         return top_pipe, bottom_pipe
 
     def get_state(self):
-        pipe_top, pipe_bottom = self.pipes[0]
-        return (
-            int(self.bird_y / 20),
-            # round(self.bird_velocity / 10, 2),
-            # round(pipe_top.x / WIDTH, 2),
-            # round(pipe_top.bottom / HEIGHT, 2)
-        )
+        # pipe_top, pipe_bottom = self.pipes[0]
+        # return (
+        #     int(self.bird_y / 20),
+        #     # round(self.bird_velocity / 10, 2),
+        #     int(pipe_top.x / 20),
+        #     int(pipe_top.height / 20)
+        # )
+        return self.convert()
 
-        self.state = np.array([pipe_top.x, self.bird_velocity], dtype=np.float32)
-        return self.state
+
+    def convert(self):
+        x = min(280, self.pipes[0][1].x)
+        y = self.pipes[0][1].y - self.bird_y
+        if y < 0:
+            y = abs(y) + 408
+        return int(x/40-1), int(y/40)
 
     def step(self, action):
-        # pygame.time.delay(10)
+        if self.delay > 0:
+            # clock.tick(self.delay)
+            pygame.time.delay(self.delay)
+
         if action == 1:
-            # self.bird_velocity += FLAP_STRENGTH / 2
-            # self.bird_velocity = max(self.bird_velocity, FLAP_STRENGTH)
             self.bird_velocity = FLAP_STRENGTH
 
         self.bird_velocity += GRAVITY
         self.bird_y += self.bird_velocity
 
-        reward = 1
+        reward = 15
         done = False
 
         new_pipes = []
-        passed = False
 
         for pipe_top, pipe_bottom in self.pipes:
             pipe_top.x -= PIPE_VELOCITY
             pipe_bottom.x -= PIPE_VELOCITY
 
-            if pipe_top.colliderect((BIRD_X, self.bird_y, 40, 30)) or \
-            pipe_bottom.colliderect((BIRD_X, self.bird_y, 40, 30)):
-                reward = -1
-                done = True
-            # print(pipe_top.x, BIRD_X)
-
-            # if pipe_top.x + PIPE_WIDTH < 0:
-            if pipe_top.x < BIRD_X and not passed:
-                reward += 10 + (self.score * 10)
-                # pipe_top = True
+            if pipe_top.x < BIRD_X and not pipe_top.passed:
+                # reward += 15
                 self.score += 1
-                passed = True
+                pipe_top.passed = True
 
 
 
@@ -97,22 +106,28 @@ class FlappyBirdEnv:
 
         self.pipes = new_pipes
 
-        if len(self.pipes) == 0 or self.pipes[-1][0].x < WIDTH - 200:
+        if len(self.pipes) == 0 or self.pipes[-1][0].x < WIDTH - 250:
             self.pipes.append(self.create_pipe())
 
-        if self.pipes[0][0].height < self.bird_y < self.pipes[0][0].height + PIPE_GAP:
-            reward += 10
+        # if self.pipes[0][0].height < self.bird_y < self.pipes[0][0].height + PIPE_GAP:
+        #     reward += 1
 
-        if self.bird_y < 100:
-            reward -= 1
+        # if self.bird_y < 100:
+        #     reward -= 10
 
-        if self.bird_y + 30 > HEIGHT - 50:
-            reward = -100
-            done = True
+        # if self.bird_y + 30 > HEIGHT - 50:
+        #     reward = -1000
+        #     done = True
 
-        if self.bird_y + bird_img.get_height() > HEIGHT - 50 or self.bird_y < 0:
-            reward = -100
-            done = True
+        # if self.bird_y + bird_img.get_height() > HEIGHT - 50 or self.bird_y < 0:
+        #     reward = -1000
+        #     done = True
+
+        done = self.check_collision()
+        # reward = 15
+        if done:
+            reward = -1000
+
 
         return self.get_state(), reward, done
 
@@ -131,10 +146,13 @@ class FlappyBirdEnv:
         return False
 
     def render(self):
+        pygame.event.get()
+        score = Font.render("Score: "+ str(self.score), 1, (255,255,255))
         screen.blit(background, (0, 0))
         screen.blit(bird_img, (BIRD_X, int(self.bird_y)))
         for pipe_top, pipe_bottom in self.pipes:
             screen.blit(pygame.transform.flip(pipe_img, False, True), (pipe_top.x, pipe_top.bottom - pipe_img.get_height()))
             screen.blit(pipe_img, (pipe_bottom.x, pipe_bottom.y))
         screen.blit(ground_img, (0, HEIGHT - 50))
+        screen.blit(score, (WIDTH - 10 -score.get_width(), 10))
         pygame.display.update()

@@ -1,16 +1,13 @@
-import pygame
 import numpy as np
 import pickle
 from FlappyBird import FlappyBirdEnv
 
-with open("q_table.pkl", "rb") as f:
+with open("q_table_q_learning.pkl", "rb") as f:
     q_table = pickle.load(f)
 
-env = FlappyBirdEnv()
+env = FlappyBirdEnv(delay=10)
 running = True
 state = env.reset()
-state = tuple(np.round(state, 5))
-clock = pygame.time.Clock()
 
 while running:
     env.render()
@@ -21,7 +18,7 @@ while running:
         action = 0
 
     next_state, _, done = env.step(action)
-    state = tuple(next_state)
+    state = next_state
 
     if done:
         print(f"Game Over! Score: {env.score}")

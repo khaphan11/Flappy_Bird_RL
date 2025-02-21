@@ -15,20 +15,21 @@ class SARSAAgent:
         return self.q_table.setdefault(state, np.zeros(self.action_size))
 
     def choose_action(self, state):
-        if np.random.uniform(0, 1) < self.epsilon:
-            return np.random.choice(self.action_size)
-        return np.argmax(self.get_q_values(state))
+        # if np.random.uniform(0, 1) < self.epsilon:
+        #     return np.random.choice(self.action_size)
+        # return np.argmax(self.get_q_values(state))
+        return int(self.get_q_values(state)[1] > self.get_q_values(state)[0])
 
 
     def update_q_value(self, state, action, reward, next_state, next_action, done):
         q_values = self.get_q_values(state)
         q_next = self.get_q_values(next_state)
-
         q_target = reward if done else reward + self.gamma * max(q_next)
         self.q_table[state][action] += self.alpha * (q_target - q_values[action])
 
-        # self.q_table[state][action] = 0.1 * self.q_table[state][action] + \
-        #                               (0.9) * (reward + max(q_next))
+        # mu = 0.4
+        # self.q_table[state][action] = mu * self.q_table[state][action] + \
+        #                               (1 - mu) * (reward + max(self.q_table[next_state]))
 
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)

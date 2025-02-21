@@ -1,24 +1,18 @@
-import pygame
-import random
-import numpy as np
 from sarsa import SARSAAgent
 from FlappyBird import FlappyBirdEnv
-
-pygame.init()
+import pickle
 
 env = FlappyBirdEnv()
-agent = SARSAAgent(state_size=4, action_size=2)
+agent = SARSAAgent(state_size=4, action_size=2, alpha=0.1, gamma=0.9, epsilon=0.9)
 
-num_episodes = 1000
+num_episodes = 500
 for episode in range(num_episodes):
     state = env.reset()
-    state = tuple(np.round(state, 5))
     action = agent.choose_action(state)
     total_reward = 0
 
     while True:
         next_state, reward, done = env.step(action)
-        next_state = tuple(np.round(next_state, 5))[0]
         next_action = agent.choose_action(next_state)
         agent.update_q_value(state, action, reward, next_state, next_action, done)
         total_reward += reward
@@ -30,11 +24,13 @@ for episode in range(num_episodes):
             print(f"Episode {episode}, Score: {env.score}, Epsilon: {agent.epsilon}, Total reward: {total_reward}")
             break
 
+        if env.score > 3000:
+            break
 
-pygame.quit()
+    q_table = agent.q_table
 
-q_table = agent.q_table
+    with open("q_table_q_learning.pkl", "wb") as f:
+        pickle.dump(agent.q_table, f)
 
-import pickle
-with open("q_table.pkl", "wb") as f:
-    pickle.dump(agent.q_table, f)
+
+# pygame.quit()
