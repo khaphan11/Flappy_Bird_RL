@@ -1,27 +1,41 @@
 import numpy as np
 import pickle
-from FlappyBird import FlappyBirdEnv
+from env import FlappyBirdEnv
+import argparse
 
-with open("q_table_q_learning.pkl", "rb") as f:
-    q_table = pickle.load(f)
 
-env = FlappyBirdEnv(delay=10)
-running = True
-state = env.reset()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        '--delay',
+        type=int,
+        default=10
+    )
+    parser.add_argument(
+        '--ckpt',
+        help='checkpoint path',
+        type=str
+    )
+    args = parser.parse_args()
 
-while running:
-    env.render()
+    with open(args.ckpt, "rb") as f:
+        q_table = pickle.load(f)
 
-    if state in q_table:
-        action = np.argmax(q_table[state])
-    else:
-        action = 0
+    env = FlappyBirdEnv(delay=args.delay)
+    running = True
+    state = env.reset()
 
-    next_state, _, done = env.step(action)
-    state = next_state
+    while running:
+        env.render()
 
-    if done:
-        print(f"Game Over! Score: {env.score}")
-        running = False
+        if state in q_table:
+            action = np.argmax(q_table[state])
+        else:
+            action = 0
 
-    # clock.tick(30)
+        next_state, _, done = env.step(action)
+        state = next_state
+
+        if done:
+            print(f"Game Over! Score: {env.score}, Gift: {env.n_gift}")
+            running = False
