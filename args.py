@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 from constants.ActionSelectionType import Action
 from constants.TDType import TD
 
@@ -75,8 +76,9 @@ def parse_args():
 
     log_dir = os.path.join('logs', args.log_dir)
 
-    if not os.path.isdir(log_dir):
-        os.makedirs(log_dir)
+    if os.path.isdir(log_dir):
+        shutil.rmtree(log_dir, ignore_errors=True)
+    os.makedirs(log_dir)
 
     with open(os.path.join(log_dir, 'info.txt'), 'w') as f:
         for key, value in vars(args).items():

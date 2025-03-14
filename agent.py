@@ -46,9 +46,8 @@ class Agent:
             q_target = reward if done else reward + self.gamma * q_next[next_action]
             self.q_table[state][action] += self.alpha * (q_target - q_values[action])
         else:
-            mu = 0.4
-            self.q_table[state][action] = mu * self.q_table[state][action] + \
-                                          (1 - mu) * (reward + max(self.q_table[next_state]))
+            self.q_table[state][action] = self.mu * self.q_table[state][action] + \
+                                          (1 - self.mu) * (reward + max(self.q_table[next_state]))
 
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)

@@ -25,7 +25,7 @@ ground_img = pygame.transform.scale(ground_img, (WIDTH, 50))
 
 BIRD_X = 50
 GRAVITY = 0.9
-FLAP_STRENGTH = -6
+FLAP_STRENGTH = -7
 
 PIPE_WIDTH = 50
 PIPE_GAP = 150

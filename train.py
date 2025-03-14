@@ -24,12 +24,13 @@ if __name__ == "__main__":
         state = env.reset()
         action = agent.choose_action(state)
         total_reward = 0
+        j = 0
 
         while True:
             next_state, reward, done = env.step(action)
             next_action = agent.choose_action(next_state)
             agent.update_q_value(state, action, reward, next_state, next_action, done)
-            total_reward += reward
+            total_reward += reward * (args.gamma ** j)
             state, action = next_state, next_action
             env.render(episode)
 
@@ -43,6 +44,7 @@ if __name__ == "__main__":
                     agent.decay_epsilon()
 
                 break
+            j += 1
 
         q_table = agent.q_table
 
