@@ -66,7 +66,6 @@ class FlappyBirdEnv:
 
     def get_state(self):
         x_pipe, y_bird = self.convert()
-        # x_gift, y_gift = int(self.gift.x / 40), int(self.gift.y / 40)
         x_gift, y_gift = self.gift.x, self.gift.y
 
         x_gift = (x_gift - BIRD_X) // 40
@@ -82,12 +81,10 @@ class FlappyBirdEnv:
         return int(x/40-1), int(y/40)
 
     def create_gift(self):
-        # gift_x = random.randint(WIDTH // 2, WIDTH - 50)
         x = self.pipes[0][0].x + PIPE_WIDTH
         gift_x = self.pipes[0][0].x + 125
         if len(self.pipes) > 1:
             gift_x = self.pipes[1][0].x + 125
-        # gift_x = random.randint(x + 10, x + 150)
         gift_y = random.randint(100, HEIGHT - 200)
         return Gift(gift_x, gift_y, 30, 30)
 
@@ -123,7 +120,6 @@ class FlappyBirdEnv:
         if len(self.pipes) == 0 or self.pipes[-1][0].x < WIDTH - PIPE_DISTANCE:
             self.pipes.append(self.create_pipe())
 
-        # gift_collected = False
         self.gift.x -= PIPE_VELOCITY
         if self.gift.colliderect((BIRD_X, self.bird_y, 40, 30)):
             self.gift.collected = True
@@ -134,23 +130,6 @@ class FlappyBirdEnv:
         if self.gift.x < 0 and not self.gift.collected:
             reward -= 50
             self.gift = self.create_gift()
-
-        # if self.pipes[0][0].height < self.bird_y < self.pipes[0][0].height + PIPE_GAP:
-        #     reward += 1
-
-        # if self.bird_y < 100:
-        #     reward -= 10
-
-        # if self.bird_y + 30 > HEIGHT - 50:
-        #     reward = -1000
-        #     done = True
-
-        # if self.bird_y + bird_img.get_height() > HEIGHT - 50 or self.bird_y < 0:
-        #     reward = -1000
-        #     done = True
-
-        # if self.gift.collected:
-        #     reward = 30
 
         done = self.check_collision()
         if done:
