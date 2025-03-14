@@ -1,157 +1,153 @@
-\documentclass[9pt,a4paper]{article}
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
 
-\usepackage{microtype}                   
-\usepackage{cmbright}                    
-\usepackage[utf8]{inputenc}              
-\usepackage[T1]{fontenc}                 
-\usepackage[colorlinks=true,allcolors=black]{hyperref} 
-\usepackage{fancyhdr}                    
-\usepackage{amsmath,amssymb}             
-\usepackage{graphicx}                    
-\usepackage{booktabs}                    
-\usepackage[english]{babel}              
-\usepackage[a4paper,top=15mm,bottom=15mm,left=20mm,right=20mm]{geometry}
-\usepackage{enumitem}                    
-\setlength{\parskip}{1pt}                
-\setlist[itemize]{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
 
-\usepackage{titlesec}
-\titlespacing*{\section}{1pt}{1pt}{1pt}
-\titlespacing*{\subsection}{0pt}{0pt}{0pt}
-\titlespacing*{\subsubsection}{0pt}{0pt}{0pt}
-
-\title{\textbf{Comparative Analysis of Q-learning and SARSA in the Flappy Bird Game with Enhanced Reward Functions}}
-\author{Phan Duy Kha, Nguyen Dinh Huy}
-\date{}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \begin{document}
+
+\title{Comparative Analysis of Q-learning and SARSA in the Flappy Bird Game with Enhanced Reward Functions}
+
+\author{
+    \IEEEauthorblockN{Phan Duy Kha, Nguyen Dinh Huy}
+    % \IEEEauthorblockA{
+    %     Affiliation \\
+    %     Email: \{phan.duykha, nguyen.dinhhuy\}@example.com}
+}
+
 \maketitle
 
+\begin{abstract}
+This report analyzes the performance of Q-learning and SARSA in training an agent for the Flappy Bird game. An enhanced reward function is utilized to encourage prolonged flight, reward bonus actions, and penalize collisions. The report describes the game mechanics, detailed state representation, action dynamics, reward structure, learning algorithms, experimental evaluation, and discussion on results and future improvements.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Reinforcement Learning, Q-learning, SARSA, Flappy Bird, Reward Functions.
+\end{IEEEkeywords}
+
 \section{Introduction}
-This report analyzes the performance of Q-learning and SARSA in training an agent for the Flappy Bird game. An enhanced reward function is utilized to encourage prolonged flight, reward bonus actions, and penalize collisions. The structure of the report includes a description of the game mechanics, methodology, experimental evaluation, and a discussion on results and future improvements.
+This report analyzes the performance of Q-learning and SARSA in training an agent for the Flappy Bird game. An enhanced reward function is utilized to encourage prolonged flight, reward bonus actions, and penalize collisions. The structure of the report includes a description of the game mechanics, a detailed analysis of state representation, actions, and reward functions, followed by the methodology, experimental evaluation, and discussion on results and future improvements.
 
 \section{Game Description and Mechanics}
-The Flappy Bird game offers a challenging environment for Reinforcement Learning experiments. It is implemented using \texttt{pygame} and comprises the following key components:
+The Flappy Bird game offers a challenging environment for Reinforcement Learning experiments. Implemented using \texttt{pygame}, it comprises several key components that simulate realistic game dynamics.
 
 \subsection{Game Elements and Dynamics}
 \begin{itemize}
-    \item \textbf{Visual Elements:} The game features a background, moving ground, pipes as obstacles, and a bird controlled by the agent. A bonus element (``gift'') is also included.
-    \item \textbf{Dynamics:} 
+    \item \textbf{Visual Elements:} The game features a background, moving ground, pipes as obstacles, and a bird controlled by the agent. A bonus element, referred to as a “gift”, is also included.
+    \item \textbf{Dynamics:}
     \begin{itemize}
         \item The bird is affected by gravity and can flap to gain altitude.
-        \item Pipes move leftwards at a constant speed; new pipes are generated as older ones exit the screen.
+        \item Pipes continuously move leftwards at a constant speed, with new pipes generated as the older ones exit the screen.
         \item The gift moves along with the pipes; when collected, it provides an extra reward.
     \end{itemize}
 \end{itemize}
 
 \subsection{State Representation and Actions}
+The agent's perception of the environment is defined by its state representation and the available actions.
+
+\subsubsection{State Representation}
+The state of the game is represented as a tuple capturing essential information related to the bird's position and the environment:
 \begin{itemize}
-    \item \textbf{State Representation:} The game state is represented as a tuple that includes the relative positions of obstacles and bonus elements.
-    \item \textbf{Actions:} 
-    \begin{itemize}
-        \item \textbf{Action 0 (Do Nothing):} The bird descends due to gravity.
-        \item \textbf{Action 1 (Flap):} The bird flaps to gain altitude.
-    \end{itemize}
+    \item \textbf{Horizontal Distance to the Next Pipe:} This is calculated as the difference in x-coordinates between the bird and the next set of pipes, normalized by a fixed factor to maintain consistency.
+    \item \textbf{Vertical Distance to the Next Pipe:} This component measures the difference in height between the bird and the lower edge of the upper pipe, with adjustments to ensure all values are non-negative.
+    \item \textbf{Position of the Next Gift:} Both the x and y coordinates of the gift are incorporated; the x-coordinate is normalized similarly to that of the pipes, while the y-coordinate is computed relative to the bird's current vertical position.
 \end{itemize}
+This detailed representation ensures the agent captures all relevant spatial information to make informed decisions.
+
+\subsubsection{Actions}
+The agent has two possible actions:
+\begin{itemize}
+    \item \textbf{Action 0 (Do Nothing):} The bird is allowed to descend naturally under gravity.
+    \item \textbf{Action 1 (Flap):} The bird flaps its wings to gain altitude, counteracting gravity.
+\end{itemize}
+Action selection is implemented using a greedy or \(\epsilon\)-greedy strategy, where the agent occasionally takes a random action to promote exploration while predominantly choosing the action with the highest expected reward.
 
 \subsection{Enhanced Reward Function}
+The reward function is designed to provide clear, multidimensional feedback to guide the agent’s learning:
 \begin{itemize}
-    \item A positive reward is given for successfully passing a pipe.
-    \item A bonus reward is provided for collecting a gift, while missing the gift incurs a minor penalty.
-    \item A significant penalty is applied upon collision or when the bird goes out of bounds.
+    \item \textbf{+200:} Awarded for successfully passing through a pipe.
+    \item \textbf{+500:} Granted for collecting a gift.
+    \item \textbf{-50:} Penalizes the agent for missing a gift.
+    \item \textbf{-1000:} Imposed when the bird collides with a pipe or the ground, leading to the termination of the episode.
 \end{itemize}
+This reward structure balances positive reinforcement for desirable actions with penalties for mistakes, thereby shaping the agent’s behavior effectively.
 
 \section{Methodology}
-This section describes the overall approach including environment setup, agent design, and the learning algorithms.
-
 \subsection{Environment and Agent Architecture}
-\begin{itemize}
-    \item \textbf{Environment:} The game is simulated using \texttt{pygame}, which manages state updates, action effects, and reward assignments.
-    \item \textbf{Agent:} The agent uses a Q-table implemented as a dictionary, where the keys are state tuples and the values are arrays of Q-values for each action. States are added dynamically as they are encountered.
-    \item \textbf{Action Selection:} A greedy or \(\epsilon\)-greedy strategy is used, with \(\epsilon\) gradually decayed to balance exploration and exploitation.
-\end{itemize}
+The environment is simulated using \texttt{pygame}, which manages state updates, applies action effects, and assigns rewards based on the bird’s interactions. The agent employs a Q-table, stored as a dictionary where each state tuple is associated with an array of Q-values for the available actions. States are added dynamically as they are encountered, and actions are chosen based on either a greedy or \(\epsilon\)-greedy strategy, with the exploration rate decaying over time to shift the focus from exploration to exploitation.
 
 \subsection{Learning Algorithms}
-Both algorithms share the same framework for state discretization and Q-table management, differing mainly in their update rules:
-
-\subsubsection{Q-learning}
+Both Q-learning and SARSA are implemented within the same framework for state discretization and Q-table management. Their primary difference lies in the update mechanism:
 \begin{itemize}
-    \item \textbf{Principle:} An off-policy method that updates the Q-value using the maximum estimated future reward from the next state:
-    \[
-    Q(s,a) \leftarrow Q(s,a) + \alpha \left( r + \gamma \max_{a'} Q(s',a') - Q(s,a) \right)
-    \]
-    \item \textbf{Behavior:} This approach is optimistic, leading to faster convergence but potentially riskier strategies.
+    \item \textbf{Q-learning:} An off-policy method that updates Q-values using the maximum expected future reward from the next state. This approach typically converges faster, though it may promote riskier strategies.
+    \item \textbf{SARSA:} An on-policy method that updates Q-values based on the actual action taken in the next state, leading to a more conservative and stable learning process.
 \end{itemize}
-
-\subsubsection{SARSA}
-\begin{itemize}
-    \item \textbf{Principle:} An on-policy method that updates the Q-value based on the action actually taken in the next state:
-    \[
-    Q(s,a) \leftarrow Q(s,a) + \alpha \left( r + \gamma Q(s',a') - Q(s,a) \right)
-    \]
-    \item \textbf{Behavior:} By updating based on the actual action, SARSA tends to produce a more conservative policy that reduces collision risks.
-\end{itemize}
-
-\subsection{Implementation Details}
-\begin{itemize}
-    \item \textbf{State Discretization:} Continuous states are discretized by combining the positions of pipes and gifts into a tuple, ensuring the Q-table remains manageable.
-    \item \textbf{Training Process:} The training proceeds through multiple episodes, with the exploration rate \(\epsilon\) decaying gradually from high to low to shift from exploration to exploitation.
-    \item \textbf{Reward Structure:} As detailed above, the reward function provides specific numerical feedback to guide the learning process: \textbf{+200} for passing a pipe, \textbf{+500} for collecting a gift, \textbf{-50} for missing a gift, \textbf{-1000} for collision or going out of bounds.
-
-\end{itemize}
+Key parameters such as the learning rate (\(\alpha\)), discount factor (\(\gamma\)), and exploration rate (\(\epsilon\)) play critical roles in both algorithms.
 
 \section{Experimental Evaluation}
 \subsection{Setup}
-Key parameters for the training process include: Learning rate (\(\alpha\)) 0.1; Discount factor (\(\gamma\)) 0.9; Exploration rate (\(\epsilon\)) initially high, decaying over time; Number of training episodes 1000
-
+The training process is configured with the following parameters:
+\begin{itemize}
+    \item Learning rate (\(\alpha\)): 0.1
+    \item Discount factor (\(\gamma\)): 0.9
+    \item Exploration rate (\(\epsilon\)): Initially high and gradually decaying
+    \item Number of training episodes: 1000
+\end{itemize}
 
 \subsection{Performance Metrics}
-Performance is evaluated using:
+The agent’s performance is evaluated based on:
 \begin{itemize}
-    \item \textbf{Average Score per Episode:} Reflects overall agent performance.
-    \item \textbf{Convergence Speed:} Indicated by the stabilization of Q-values.
-    \item \textbf{Policy Stability:} Measured by the consistency of decisions during testing.
-    \item \textbf{Bonus Collection Frequency:} Frequency of collecting bonus rewards from gifts.
+    \item \textbf{Average Score per Episode:} Indicative of the overall performance.
+    \item \textbf{Convergence Speed:} Reflected by the stabilization of Q-values across episodes.
+    \item \textbf{Policy Stability:} Measured by the consistency of the agent's decisions during testing.
+    \item \textbf{Bonus Collection Frequency:} The frequency of collecting gifts, which reflects the effectiveness of the reward function.
 \end{itemize}
 
 \subsection{Results and Discussion}
-Although detailed results (charts and tables) are not included here, preliminary observations indicate:
+Preliminary observations indicate that:
 \begin{itemize}
     \item Q-learning converges faster but may adopt riskier strategies.
-    \item SARSA demonstrates a more stable learning process with fewer collisions due to its on-policy updates.
-    \item The enhanced reward function is crucial for guiding the agent toward an effective policy.
+    \item SARSA provides a more stable learning process with fewer collisions due to its on-policy update mechanism.
+    \item The enhanced reward function is critical in guiding the agent toward effective behavior.
 \end{itemize}
 
 \section{Discussion and Conclusion}
 \subsection{Discussion}
-Comparing the two algorithms:
+A detailed comparison between Q-learning and SARSA reveals:
 \begin{itemize}
-    \item \textbf{Q-learning:} Converges quickly by optimistically estimating future rewards, but may lead to risky actions.
-    \item \textbf{SARSA:} Provides a more conservative and stable policy by updating based on the actual actions taken.
-    \item The enhanced reward function delivers effective multi-dimensional feedback that is essential for successful learning.
+    \item \textbf{Q-learning:} Its off-policy nature and optimistic estimation of future rewards lead to rapid convergence but may encourage riskier actions.
+    \item \textbf{SARSA:} By basing updates on the actual actions taken, SARSA tends to foster a more conservative and stable policy.
+    \item The multidimensional feedback provided by the enhanced reward function is essential for effective learning.
 \end{itemize}
 
 \subsection{Limitations and Future Work}
-Despite promising results, several limitations remain:
+While the results are promising, several limitations remain:
 \begin{itemize}
-    \item The discretization of continuous states may not capture all dynamics of the game.
-    \item Further parameter tuning could improve overall performance.
-    \item Future research may explore more complex reward structures and advanced state representation techniques.
+    \item The discretization of continuous states might omit some dynamic details of the game.
+    \item Further parameter tuning may improve performance.
+    \item Future work could explore more complex reward structures and advanced state representation techniques, possibly incorporating deep learning methods.
 \end{itemize}
 
 \subsection{Conclusion}
-The report demonstrates that both Q-learning and SARSA can effectively train an agent in the Flappy Bird game with an enhanced reward scheme. Each algorithm has its strengths: Q-learning offers faster convergence while SARSA ensures safer, more stable policies. The analysis lays a strong foundation for further improvements and deeper research into reinforcement learning strategies.
+This report demonstrates that both Q-learning and SARSA can effectively train an agent in the Flappy Bird game using an enhanced reward scheme. Q-learning offers faster convergence, while SARSA provides a safer and more stable policy. The analysis provides a strong foundation for further improvements and deeper research into reinforcement learning strategies.
 
-% \begin{thebibliography}{9}
-%     \bibitem{sutton-barto}
-%       Sutton, R. S. and Barto, A. G.,
-%       \textit{Reinforcement Learning: An Introduction}.
-%       MIT Press, 2018.
-    
-%     \bibitem{mnih2015human}
-%       Mnih, V., Kavukcuoglu, K., Silver, D., Rusu, A. A., et al.,
-%       ``Human-level control through deep reinforcement learning,''
-%       \textit{Nature}, 518(7540), 529--533, 2015.
-% \end{thebibliography}
+%\begin{thebibliography}{9}
+%    \bibitem{sutton-barto}
+%      Sutton, R. S. and Barto, A. G.,
+%      \textit{Reinforcement Learning: An Introduction}.
+%      MIT Press, 2018.
+%    
+%    \bibitem{mnih2015human}
+%      Mnih, V., Kavukcuoglu, K., Silver, D., Rusu, A. A., et al.,
+%      ``Human-level control through deep reinforcement learning,''
+%      \textit{Nature}, 518(7540), 529--533, 2015.
+%\end{thebibliography}
 
 \end{document}
